@@ -5,19 +5,26 @@
 ## Description
 This repository contains my Bachelor thesis `BA_main.pdf` and code that was used to obtain the results that are discussed in it.
 
-It deals with Gravitationa-Wave events published by the LIGO-Virgo-Kagra collaboration in the third Gravitational-Wave catalog [GWTC-3](https://arxiv.org/abs/2111.03606). More specifically, the topic are systematics in the posterior distributions of these events (to learn more about posteriors, see chapter 2 of the [thesis](BA_main.pdf) and sources within). These posteriors can be downloaded from the corresponding [Zenodo release](https://zenodo.org/record/5546663#.Yka1ky3P1D9), for example using the script `download.py`.
+It deals with Gravitationa-Wave events published by the LIGO-Virgo-Kagra collaboration in the third Gravitational-Wave catalog GWTC-3 ([arXiv:2111.03606](https://arxiv.org/abs/2111.03606)). More specifically, the topic are systematics in the posterior distributions of these events (to learn more about posteriors, see chapter 2 of the [thesis](BA_main.pdf) and sources within). These posteriors can be downloaded from the corresponding [Zenodo release](https://zenodo.org/record/5546663#.Yka1ky3P1D9), for example using `download_data.py`.
 
 
-Just like the file names suggest, `thesis_plots.py` and `thesis_tables.py` are scripts reproducing the figures and tables. All other files contain the functions, constants etc. that are used therein.
+Just like the file names suggest, `thesis_plots.py` and `thesis_tables.py` are scripts reproducing the figures and tables from the thesis. All other files contain functions, constants etc. that are used therein.
+
+
+For help with how the files work, look at the comments at the beginning of the script. Some of them are scripts that can be executed and also have a docstring, which can be printed e.g. using:
+```python
+import download_data
+print(download_data.__doc__)
+```
 
 
 ## Project Status
-The thesis has already been submitted, so the official time of writing new code is over. However, there is still work to do:
+The thesis has already been submitted, so the time of writing new code is over. However, there is still work to do:
 
 * `functions.py`: some functions have not been added yet
 * `thesis_plots.py`: some plots for chapter are still missing
 * `thesis_tables.py`: tables for chapter 5 are still missing
-* general: improving code and documentation
+* in general: improving code and documentation
 
 
 ## Citation
