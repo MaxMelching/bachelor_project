@@ -32,9 +32,9 @@ def create_datamatrix(data: any, names: any = None) -> np.array:
 
     Parameters:
         - data (2D array-like): dataset where values of measurements are
-          stored. Has to be of a type which allows acess to subsets
+          stored. Has to be of a type which allows access to subsets
           labeled with parameters par via data[par].
-        - names (list or array-like, optional, default = None): set of
+        - names (array-like, optional, default = None): set of
           parameters, order determines order of columns in output.
           If None, every parameter from data is taken.
 
@@ -52,40 +52,57 @@ def create_datamatrix(data: any, names: any = None) -> np.array:
 
 
 class pca:
-    def __init__(self, X: list, basis: list = None, names: list = None, normed: bool = False, centered: bool = False):
+    def __init__(self, X: any, basis: any = None, names: any = None,
+                 normed: bool = False, centered: bool = False):
         """
-        Transform the input data such that 
-        Computes the Principal Components (PCs) of input data and provides additional functions to return
-        (co-)variances, eigenvectors and more.
+        Computes the Principal Components (PCs) of input data and
+        provides additional functions to return (co-)variances,
+        eigenvectors and more.
 
         Parameters:
-            - X (2D list or array-like): matrix containing the dataset to work with.
-            - basis (2D list or array-like, optional, default = None): data which is used to compute the transformation matrix
-              (eigenvectors of the corresponding covariance matrix). Should have the same dimensions as X.
-              If basis = None, it is set to X and the transformed X contains the Principal Components.
-            - names (list or array-like, default = None): contains strings with labels of the parameters for the columns of X.
-              Is only used in plots, so it can be None when no plots are used (otherwise, there will be an error).
-            - normed (boolean, optional, default = False): if True, the data in X is normalized by dividing the values for
+        ----------
+            - X (array-like): matrix containing dataset to work with.
+              Columns represent different parameters, rows measurements.
+            - basis (array-like, optional, default = None): data which
+              is used to compute the transformation matrix (eigenvectors
+              of the corresponding covariance matrix). Must have the
+              same number of columns as X.
+              If basis = None, it is set to X and the transformed X
+              contains the Principal Components.
+            - names (array-like, default = None): contains strings with
+              labels of the parameters for the columns of X. Is only
+              used in plots, so it can be None when no plots are used
+              (otherwise, there will be an error).
+            - normed (boolean, optional, default = False): if True, the
+              data in X is normalized by dividing the values for
               each parameter by the respective standard deviation.
-            - centered (boolean, optional, default = False): if False, the data in X is normalized by dividing the values for
+            - centered (boolean, optional, default = False): if True,
+              the data in X is normalized by dividing the values for
               each parameter by the respective standard deviation.
         
         Attributes:
-            - X (numpy-array): copy of input X, which is changed depending on the values of normed, centered.
-            - basis (numpy-array): copy of input basis, which is changed depending on the values of normed, centered. If the
-              input for basis is None (default), it is set to X.
+        ----------
+            - X (numpy-array): copy of input X, which might be changed
+              depending on the values of normed, centered.
+            - basis (numpy-array): copy of input basis, which might be
+              changed depending on the values of normed, centered. If
+              the basis is None (default), it is set to X.
             - m (integer): number of rows in X.
             - n (integer): number of columns in X.
             - mb (integer): number of rows in basis.
             - nb (integer): number of columns in basis.
-            - evals (numpy-array): eigenvalues of covariance matrix of basis (not necessarily X!).
-            - A (numpy-array): eigenvectors of covariance matrix of basis, arranged in a matrix.
-            - Z (numpy-array): matrix product of X and A (transformed data). Equal to the PCs of X if basis = X.
-            - Zbasis (numpy-array): matrix product of basis and A. Equal to Z if basis = X.
+            - evals (numpy-array): eigenvalues of covariance matrix of
+              basis (not necessarily X).
+            - A (numpy-array): eigenvectors of covariance matrix of
+              basis, arranged in a matrix.
+            - Z (numpy-array): matrix product of X and A (transformed
+              data). Equal to the PCs of X if basis = X.
+            - Zbasis (numpy-array): matrix product of basis and A. Equal
+              to Z if basis = X.
             - names (numpy-array): copy of input names.
         """
         
-        # create local variables for X and basis
+        # Create local variables
         self.X = np.array(X)
         
         if basis is None:
@@ -93,56 +110,62 @@ class pca:
         else:
             self.basis = np.array(basis)
         
-        # store dimensions; n is the number of parameters (columns) and m the number of measurements (rows)
+        # Store dimensions
         self.m, self.n = self.X.shape
         self.mb, self.nb = self.basis.shape
         
         if centered:
-            self.X -= np.mean(self.X, axis = 0) # axis = 0 makes that mean of every column is computed
-            self.basis -= np.mean(self.basis, axis = 0)
-            # the calculation performed is to subtract row vector mean from every row of X
-            # -> this does not change variances of the PCs, but also shifts them to have zero mean
+            # Subtract row vector mean from every row of X. That does
+            # not change variances of data/PCs, only shifts mean to zero
+            self.X -= np.mean(self.X, axis=0)
+            self.basis -= np.mean(self.basis, axis=0)
         
         
-        # compute the covariance/ correlation matrix, based on argument normed (does not change mean = 0 if it is the case)
-        # for rowvar = True, the matrix would have to be transposed (here, columns contain different measurements)
         if normed:
-            # self.X /= np.std(self.X, axis = 0) # divide each row by its standard deviation
-            self.X /= np.std(self.basis, axis = 0) # divide each row by its standard deviation
+            # Divide each row by its standard deviation
+            self.X /= np.std(self.basis, axis=0)
 
-            self.basis /= np.std(self.basis, axis = 0)
+            self.basis /= np.std(self.basis, axis=0)
             
-            self.S = np.corrcoef(self.basis, rowvar = False) # cov would do the same because basis is normalized, but this way we make sure
+            self.S = np.corrcoef(self.basis, rowvar=False) 
+            # np.cov would do the same because basis is standardized,
+            # but this way we make sure and it is more obvious
         else:
-            self.S = np.cov(self.basis, rowvar = False)# = 1 / (self.m - 1) * np.dot(self.basis.T, self.basis)
+            self.S = np.cov(self.basis, rowvar=False)
+            # = 1 / (self.m - 1) * np.dot(self.basis.T, self.basis)
         
-        # diagonalise covariance matrix; eigh is specifically for symmetric matrices
+        # Diagonalise covariance matrix
         self.evals, self.A = np.linalg.eigh(self.S)
 
-        # sort eigenvalues and -vectors in descending order
-        perm = np.flip(self.evals.argsort()) # flip(arr) = arr[::-1]; reverses elements because argsort gives ascending (eigh already seems to do so)
+        # Sort eigenvalues and -vectors in descending order
+        perm = np.flip(self.evals.argsort()) # argsort gives ascending
         self.evals = self.evals[perm]
         self.A = self.A[:, perm]
         
-        # compute transformed data (for X = basis, these are the Principal Components and Z = Zbasis)
+        # Compute transformed data
         self.Z = np.dot(self.X, self.A)
 
         self.Zbasis = np.dot(self.basis, self.A)
         
-        # give names local variable
+        
         self.names = np.array(names)
-        # permuting them is not necessary as only eigenvectors are (possibly) switched,
-        # but not the components in them (which names correspond to)
+        # Permuting them like evals, A is not necessary as only
+        # order of eigenvectors is (potentially) switched, but not the
+        # components in them (which names correspond to).
         
 
-    def get_X(self, q: int = None):
+    def get_X(self, q: int = None) -> np.array:
         """
-        Returns the data matrix stored as a local variable. May differ from input X due to normalization and/ or centering.
+        Returns the data matrix stored as a local variable. May differ
+        from input X due to normalization and/or centering.
 
         Parameters:
-            - q (int, optional, default = None): number of columns to take. If None, all of them are taken.
+        ----------
+            - q (int, optional, default = None): number of columns to
+              return. If None, all of them are taken.
         
         Returns:
+        -------
             - first q columns of local variable X.
         """
 
@@ -152,15 +175,19 @@ class pca:
         return self.X[:, :q]
         
 
-    def get_basis(self, q: int = None):
+    def get_basis(self, q: int = None) -> np.array:
         """
-        Returns a certain number of columns of the basis matrix stored as a local variable.
-        These may differ from input basis due to normalization and/ or centering.
+        Returns a certain number of columns of the basis matrix stored
+        as a local variable. These may differ from input basis due to
+        normalization and/ or centering.
 
         Parameters:
-            - q (int, optional, default = None): number of columns to take. If None, all of them are taken.
+        ----------
+            - q (int, optional, default = None): number of columns to
+              return. If None, all of them are taken.
         
         Returns:
+        -------
             - first q columns of local variable basis.
         """
 
@@ -170,15 +197,19 @@ class pca:
         return self.basis[:, :q]
     
 
-    def get_PCs(self, q: int = None):
+    def get_PCs(self, q: int = None) -> np.array:
         """
-        Returns a certain number of columns of the transformed data matrix stored as a local variable,
-        which contains the PCs of X if basis = X.
+        Returns a certain number of columns of the transformed data
+        matrix stored as a local variable, which contains the PCs of X
+        if basis = X.
 
         Parameters:
-            - q (int, optional, default = None): number of columns to take. If None, all of them are taken.
+        ----------
+            - q (int, optional, default = None): number of columns to
+              return. If None, all of them are taken.
         
         Returns:
+        -------
             - first q columns of local variable Z.
         """
 
@@ -188,15 +219,18 @@ class pca:
         return self.Z[:, :q] # = np.dot(X, A[:, :q])
     
     
-    def get_basisPCs(self, q: int = None):
+    def get_basisPCs(self, q: int = None) -> np.array:
         """
-        Returns a certain number of columns of the transformed basis matrix used in the function,
-        which contains the PCs of basis.
+        Returns a certain number of columns of the transformed basis
+        matrix used in the function, which contains the PCs of basis.
 
         Parameters:
-            - q (int, optional, default = None): number of columns to take. If None, all of them are taken.
+        ----------
+            - q (int, optional, default = None): number of columns to
+              return. If None, all of them are taken.
         
         Returns:
+        -------
             - first q columns of local variable Zbasis.
         """
         
@@ -206,21 +240,30 @@ class pca:
         return self.Zbasis[:, :q]
     
 
-    def get_cov(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_cov(self, q: int = None, display: bool = False,
+                savepath: str = None) -> np.array | None:
         """
-        Returns the covariance matrix of the first q columns of basis either as a 2D numpy-array or as a heatmap.
+        Returns the covariance matrix of the first q columns of basis
+        either as a 2D numpy-array or as a heatmap.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
 
         Returns:
-            - first q columns of local variable S if display = True, else None.
+        -------
+            - first q columns of local variable S if display = True,
+              else None.
         """
         
         if q is None:
@@ -229,40 +272,53 @@ class pca:
         if not display:
             return self.S[:q, :q]
         else:
-            cov_df = pd.DataFrame(np.round(self.S[:q, :q], 2), columns = self.names[:q], index = self.names[:q])
-            sns.heatmap(cov_df.abs(), annot = cov_df, fmt = 'g')
+            cov_df = pd.DataFrame(
+                                  np.round(self.S[:q, :q], 2),
+                                  columns=self.names[:q],
+                                  index = self.names[:q]
+                                  )
+            sns.heatmap(cov_df.abs(), annot=cov_df, fmt='g')
             
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'covmatrix_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
     
 
-    def get_transformedcov(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_transformedcov(self, q: int = None, display: bool = False,
+                           savepath: str = None) -> np.array | None:
         """
-        Computes the diagonalized covariance matrix of the first q columns of basis, i.e. the matrix product (A^T)SA,
-        either as a 2D numpy-array or as a heatmap. Entries are the first q eigenvalues.
+        Computes the diagonalized covariance matrix of the first q
+        columns of basis, i.e. the matrix product (A^T)SA. Returned
+        either as a 2D numpy-array or as a heatmap.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
 
         Returns:
-            - first q columns of first q columns of diagonalized covariance matrix of basis if display = True, else None.
+        -------
+            - first q columns of first q columns of diagonalized
+              covariance matrix of basis if display = True, else None.
         """
         
         if q is None:
@@ -273,62 +329,79 @@ class pca:
         if not display:
             return Sa
         else:
-            cov_df = pd.DataFrame(np.round(Sa[:q, :q], 2), columns = self.names[:q], index = self.names[:q])
-            sns.heatmap(cov_df.abs(), annot = cov_df, fmt = 'g') # limits 0 and 1 could be chosen for normed = True
+            cov_df = pd.DataFrame(
+                                  np.round(Sa[:q, :q], 2),
+                                  columns=self.names[:q],
+                                  index=self.names[:q]
+                                  )
+            sns.heatmap(cov_df.abs(), annot=cov_df, fmt='g')
+            # Limits 0 and 1 could be chosen for normed = True
             
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'transformed_covariancematrix{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
     
 
-    def get_eigenvalues(self, q: int = None):
+    def get_eigenvalues(self, q: int = None) -> np.array | None:
         """
-        Returns a certain number of eigenvalues of the covariance matrix of basis in descending order.
+        Returns a certain number of eigenvalues of the covariance matrix
+        of basis in descending order.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to return. If None, all of them are taken.
         
         Returns:
+        -------
             - first q columns of local variable evals.
         """
 
         if q is None:
             q = self.n
         
-        return self.evals[:q] # = np.var(self.Zbasis[:, :q], axis = 0)
+        return self.evals[:q] # = np.var(self.Zbasis[:, :q], axis=0)
     
 
-    def get_transformedvariances(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_transformedvariances(self, q: int = None, display: bool = False,
+                                 savepath: str = None) -> np.array | None:
         """
         Returns a certain number of variances of parameters in Z, Zbasis.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
         
         Returns:
-            - matrix of first q variances of Z, Zbasis in each row if display = True, else None.
+        -------
+            - matrix of first q variances of Z, Zbasis in each row if
+              display = True, else None.
         """
         
         if q is None:
             q = self.n
         
-        zvar = np.var(self.Z[:, :q], axis = 0)
+        zvar = np.var(self.Z[:, :q], axis=0)
 
         if not display:
             return [zvar, self.evals]
@@ -342,29 +415,34 @@ class pca:
             plt.ylabel('Components')
 
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'transformed_variances_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
     
 
-    def get_retainedvariance(self, q: int = None):
+    def get_retainedvariance(self, q: int = None) -> float:
         """
-        Calculates the percentage of variance retained by a certain number of eigenvalues.
+        Calculates the percentage of variance retained by a certain
+        number of eigenvalues.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to take. If None, all of them are taken.
         
         Returns:
-            - sum of the first q eigenvalues divided by 100 to give a percentage.
+        -------
+            - sum of the first q eigenvalues divided by 100 to give a
+              percentage.
         """
 
         if q is None:
@@ -373,21 +451,29 @@ class pca:
         return np.sum(self.evals[:q]) / np.sum(self.evals) * 100
     
 
-    def get_eigenvectors(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_eigenvectors(self, q: int = None, display: bool = False,
+                         savepath: str = None) -> np.array | None:
         """
         Returns a certain number of eigenvectors of S.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvectors to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvectors
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
 
         Returns:
-            - matrix of first q eigenvectors of basis if display = True, else None.
+        -------
+            - matrix of first q eigenvectors of basis if display = True,
+              else None.
         """
 
         if q is None:
@@ -414,36 +500,46 @@ class pca:
             # maybe divide each vector (= row) by its maximum element? Then, relative influence can be seen better, right?
 
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'eigenvectors_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
 
 
-    def get_weightedeigenvectors(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_weightedeigenvectors(self, q: int = None, display: bool = False,
+                                 savepath: str = None) -> np.array | None:
         """
-        Computes the weighted versions of eigenvectors of S where weights are the square root of the respective eigenvalue.
-        This visualizes the significance of the eigenvector in a convenient manner and is also called correlation.
+        Computes the weighted versions of eigenvectors of S where
+        weights are the square root of the respective eigenvalue. This
+        visualizes the significance of the eigenvector in a convenient
+        manner and is also called correlation.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvectors to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvectors
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
 
         Returns:
-            - matrix of first q weighted eigenvectors of basis if display = True, else None.
+        -------
+            - matrix of first q weighted eigenvectors of basis if
+              display = True, else None.
         """
 
         #corr = self.A * np.sqrt(self.evals) / np.std(self.X, axis = 0) # std is 1 for normed = True
@@ -464,36 +560,45 @@ class pca:
             plt.ylabel('PCs')
 
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'weighted_eigenvectors_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
         
 
-    def get_eigenvectors_standarderror(self, q: int = None, display = False, savepath: str = None):
+    def get_eigenvectors_standarderror(self, q: int = None, display = False,
+                                       savepath: str = None) -> np.array | None:
         """
-        Calculates the error for each component of a certain amount of eigenvectors of S based on a formula taken from
-        "A User's Guide to Principal Component Analysis" by J.E. Jackson.
+        Calculates the error for each component of a certain amount of
+        eigenvectors of S based on a formula taken from "A User's Guide
+        to Principal Component Analysis" by J.E. Jackson.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvectors to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvectors
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
 
         Returns:
-            - matrix of the error of the first q eigenvectors of basis if display = True, else None.
+        -------
+            - matrix of the error of the first q eigenvectors of basis
+              if display = True, else None.
         """
 
         if not q:
@@ -524,41 +629,49 @@ class pca:
             plt.ylabel('Eigenvectors')
 
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'eigenvectors_standarderror_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
                 
             
-    def get_transformedmeans(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_transformedmeans(self, q: int = None, display: bool = False,
+                             savepath: str = None) -> np.array | None:
         """
         Returns a certain number of means of parameters in Z, Zbasis.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
         
         Returns:
-            - matrix of first q variances of Z, Zbasis in each row if display = True, else None.
+        -------
+            - matrix of first q variances of Z, Zbasis in each row if
+              display = True, else None.
         """
 
         if q is None:
             q = self.n
 
-        means = [np.mean(self.Z[:, :q], axis = 0), np.mean(self.Zbasis[:, :q], axis = 0)]
+        means = [np.mean(self.Z[:, :q], axis=0), np.mean(self.Zbasis[:, :q], axis=0)]
 
         if not display:
             return means
@@ -568,41 +681,49 @@ class pca:
             plt.ylabel('Components')
 
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'transformed_means_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
             
             
-    def get_originalmeans(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_originalmeans(self, q: int = None, display: bool = False,
+                          savepath: str = None) -> np.array | None:
         """
         Returns a certain number of means of parameters in X, basis.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
         
         Returns:
-            - matrix of first q variances of X, basis in each row if display = True, else None.
+        -------
+            - matrix of first q variances of X, basis in each row if
+              display = True, else None.
         """
 
         if q is None:
             q = self.n
 
-        means = [np.mean(self.X[:, :q], axis = 0), np.mean(self.basis[:, :q], axis = 0)]
+        means = [np.mean(self.X[:, :q], axis=0), np.mean(self.basis[:, :q], axis=0)]
 
         if not display:
             return means
@@ -612,35 +733,43 @@ class pca:
             plt.ylabel('Parameters')
 
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'original_variances_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
     
 
-    def get_originalvariances(self, q: int = None, display: bool = False, savepath: str = None):
+    def get_originalvariances(self, q: int = None, display: bool = False,
+                              savepath: str = None) -> np.array | None:
         """
         Returns a certain number of variances of parameters in X, basis.
 
         Parameters:
-            - q (int, optional, default = None): number of eigenvalues to take. If None, all of them are taken.
-            - display (boolean, optional, default = False): determines if the function returns a numpy-array
-              (which can be used for storing the matrix) or if it is displayed.
-            - savepath (string, optional, default = None): if display is True and savepath is not None, the
-              plot generated will be saved. The filename is either given in saveplot (when a fileformat is 
-              contained in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of eigenvalues
+              to return. If None, all of them are taken.
+            - display (boolean, optional, default = False): determines
+              if the function returns a numpy-array (which can be used
+              for storing the matrix) or if it is displayed.
+            - savepath (string, optional, default = None): if display is
+              True and savepath is not None, the plot generated will be
+              saved. The filename is either given in saveplot (when a
+              fileformat is contained in savepath) or an automatic one
+              is created and saved to the path given by savepath (to
+              save it into the same directory, set savepath = '').
         
         Returns:
-            - matrix of first q variances of X, basis in each row if display = True, else None.
+        -------
+            - matrix of first q variances of X, basis in each row if
+              display = True, else None.
         """
         
         if q is None:
@@ -661,30 +790,35 @@ class pca:
             plt.ylabel('Parameters')
 
             if savepath:
-                # if path already contains a name + data format, this name is
-                # taken; otherwise, an automatic one is created
+                # If path already contains a name + data format, this
+                # name is taken. Otherwise, an automatic one is created.
                 if '.' in savepath[-4:]:
-                    plt.savefig(savepath, bbox_inches = 'tight')
+                    plt.savefig(savepath, bbox_inches='tight')
                 else:
                     name = f'original_variances_{self.names}'
                     # if limits:
                     #     name += f'_limits{limits}'
                     
-                    plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                    plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
                     
             plt.show()
     
 
     # next: some functions which are specifically for PCA, mainly for selecting relevant PCs
-    def total_variance(self, t: float):
+    def total_variance(self, t: float) -> int:
         """
-        Computes the number of PCs necessary to keep a certain percentage of the total variance for the transformed basis.
+        Computes the number of PCs necessary to keep a certain
+        percentage of the total variance for the transformed basis.
 
         Parameters:
-            - t (float): threshold of percentage to be kept. Has to be 0 <= t <= 1.
+        ----------
+            - t (float): threshold of percentage to be kept. Has to be
+              0 <= t <= 1.
         
         Returns:
-            - q (integer): minimal number of variables to keep the percentage t of the total variance.
+        -------
+            - q (integer): minimal number of variables to keep the
+              percentage t of the total variance.
         """
 
         retained_var = 0
@@ -701,18 +835,24 @@ class pca:
         return q
 
 
-    def scree_plot(self, q: int = None, savepath: str = None):
+    def scree_plot(self, q: int = None, savepath: str = None) -> None:
         """
-        Creates a scree plot for the variances of a certain amount of the transformed variables.
+        Creates a scree plot for the variances of a certain amount of
+        the transformed variables.
 
         Parameters:
-            - q (int, optional, default = None): number of variables to take. If None, all of them are taken.
-            - savepath (string, optional, default = None): if it is not None, the plot generated
-              will be saved. The filename is either given in saveplot (when a fileformat is contained
-              in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - q (int, optional, default = None): number of variables
+              to return. If None, all of them are taken.
+            - savepath (string, optional, default = None): if it is not
+              None, the plot generated will be saved. The filename is
+              either given in saveplot (when a fileformat is contained
+              in savepath) or an automatic one is created and saved to
+              the path given by savepath (to save it into the same
+              directory, set savepath = '').
         
         Returns:
+        -------
             - None
         """
 
@@ -721,7 +861,7 @@ class pca:
 
         x = np.arange(1, self.n + 1, 1)
         
-        plt.plot(x, self.evals, marker = 'x', markersize = 10, markeredgecolor = 'r')
+        plt.plot(x, self.evals, marker='x', markersize=10, markeredgecolor='r')
         #plt.bar(x, height = self.evals, width = 0.5)
         plt.ylabel('Eigenvalue')
         plt.xlabel('Component')
@@ -729,20 +869,20 @@ class pca:
         plt.xticks(x)
         plt.grid(True)
         for i, eval in enumerate(self.evals): # indices and values are needed
-            plt.text(i + 1, 1.05 * eval + 0.05, np.round(eval, 2), ha = 'center') # for bar: second to '1.05 * eval'
+            plt.text(i + 1, 1.05 * eval + 0.05, np.round(eval, 2), ha='center') # for bar: second to '1.05 * eval'
             # +1 because i starts at 0 instead of 1; ha = horizontalalignment
 
         if savepath:
-            # if path already contains a name + data format, this name is
-            # taken; otherwise, an automatic one is created
+            # If path already contains a name + data format, this name
+            # is taken. Otherwise, an automatic one is created.
             if '.' in savepath[-4:]:
-                plt.savefig(savepath, bbox_inches = 'tight')
+                plt.savefig(savepath, bbox_inches='tight')
             else:
                 name = f'screeplot_{q}PCs_{self.names}'
                 # if limits:
                 #     name += f'_limits{limits}'
                 
-                plt.savefig(savepath + name + '.pdf', bbox_inches = 'tight')
+                plt.savefig(savepath + name + '.pdf', bbox_inches='tight')
 
         plt.show()
 
@@ -794,37 +934,46 @@ class pca:
         # plt.show()
     
         
-    def kaiser(self):
+    def kaiser(self) -> int:
         """
         Computes the number of relevant PCs based on Kaiser's rule.
 
         Parameters:
+        ----------
             - None
         
         Returns:
+        -------
             - q (integer): number of PCs with variance greater than 0.7.
+              This is in accordance with what I.T. Jolliffe argues in
+              his book "Principal Component Analysis".
         """
 
-        eigenvecs = self.A.T[np.where(self.evals > 0.7)] # 0.7 instead of 1 is taken from Jolliffe
+        eigenvecs = self.A.T[np.where(self.evals > 0.7)]
         q = eigenvecs.shape[0] # [1] would also be ok, is quadratic
         return q
     
 
-    def broken_stick(self):
+    def broken_stick(self) -> np.array:
         """
-        Computes which PCs should be kept based on the broken stick model approach.
+        Computes which PCs should be kept based on the broken stick
+        model approach.
 
         Parameters:
+        ----------
             - None
         
         Returns:
-            - indices (numpy-array): mask showing which PCs should be kept.
+        -------
+            - indices (numpy-array): mask for array-likes showing which
+              PCs should be kept. Can be used as A[:, indices] to get
+              the "important" eigenvectors.
         """
 
         #eigenvecs = np.array([self.A[:, i] for i in range(self.n) if (self.evals[i] > np.sum([1 / j for j in range(i, self.n + 1)]) / self.n)]).T
         indices = np.array([i - 1 for i in range(1, self.n + 1) if (self.evals[i - 1] >= np.sum([1 / j for j in range(i, self.n + 1)]) / self.n)])
 
-        return indices # can then be used as A[:, indices] to get valid eigenvectors
+        return indices
     
 
     # does not work yet, therefore commented
@@ -841,18 +990,22 @@ class pca:
     
 
     # lastly: functions to plot parts of the data
-    def compare_plot(self, k: int, savepath: str = None):
+    def compare_plot(self, k: int, savepath: str = None) -> None:
         """
         Compares the histograms of the k-th variable from X and basis.
 
         Parameters:
+        ----------
             - k (integer): index of variable (column) to take.
-            - savepath (string, optional, default = None): if it is not None, the plot generated
-              will be saved. The filename is either given in saveplot (when a fileformat is contained
-              in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+            - savepath (string, optional, default = None): if it is not
+              None, the plot generated will be saved. The filename is
+              either given in saveplot (when a fileformat is contained
+              in savepath) or an automatic one is created and saved to
+              the path given by savepath (to save it into the same
+              directory, set savepath = '').
         
         Returns:
+        -------
             - None
         """
 
@@ -902,18 +1055,23 @@ class pca:
         plt.show()
     
 
-    def compare_plot_PCs(self, k: int, savepath: str = None):
+    def compare_plot_PCs(self, k: int, savepath: str = None) -> None:
         """
-        Compares the histograms of the k-th transformed variable from Z and Zbasis.
+        Compares the histograms of the k-th transformed variable from
+        Z and Zbasis.
 
         Parameters:
+        ----------
             - k (integer): index of PC (column) to take.
-            - savepath (string, optional, default = None): if it is not None, the plot generated
-              will be saved. The filename is either given in saveplot (when a fileformat is contained
-              in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+            - savepath (string, optional, default = None): if it is not
+              None, the plot generated will be saved. The filename is
+              either given in saveplot (when a fileformat is contained
+              in savepath) or an automatic one is created and saved to
+              the path given by savepath (to save it into the same
+              directory, set savepath = '').
         
         Returns:
+        -------
             - None
         """
 
@@ -965,17 +1123,21 @@ class pca:
         plt.show()
     
 
-    def compare_plot_all(self, savepath: str = None):
+    def compare_plot_all(self, savepath: str = None) -> None:
         """
         Plots histograms of every original and transformed variable.
 
         Parameters:
-            - savepath (string, optional, default = None): if it is not None, the plot generated
-              will be saved. The filename is either given in saveplot (when a fileformat is contained
-              in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+        ----------
+            - savepath (string, optional, default = None): if it is not
+              None, the plot generated will be saved. The filename is
+              either given in saveplot (when a fileformat is contained
+              in savepath) or an automatic one is created and saved to
+              the path given by savepath (to save it into the same
+              directory, set savepath = '').
         
         Returns:
+        -------
             - None
         """
 
@@ -1027,21 +1189,27 @@ class pca:
         plt.show()
     
 
-    def compare_plot_2D(self, i: int, j: int, separate: bool = False, savepath: str = None):
+    def compare_plot_2D(self, i: int, j: int, separate: bool = False,
+                        savepath: str = None) -> None:
         """
-        Plots the projection of X and basis onto the plane of two variables.
+        Plots the projection of X and basis onto the plane of two
+        variables.
 
         Parameters:
+        ----------
             - i (integer): index of first variable to take.
             - j (integer): index of second variable to take.
-            - separate (boolean, optional, default = False): determines if
-              datasets are plotted next to each other or in one plot.
-            - savepath (string, optional, default = None): if it is not None, the plot generated
-              will be saved. The filename is either given in saveplot (when a fileformat is contained
-              in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+            - separate (boolean, optional, default = False): determines
+              if datasets are plotted next to each other or in one plot.
+            - savepath (string, optional, default = None): if it is not
+              None, the plot generated will be saved. The filename is
+              either given in saveplot (when a fileformat is contained
+              in savepath) or an automatic one is created and saved to
+              the path given by savepath (to save it into the same
+              directory, set savepath = '').
         
         Returns:
+        -------
             - None
         """
 
@@ -1124,21 +1292,27 @@ class pca:
             plt.show()
     
 
-    def compare_plot_PCs_2D(self, i: int, j: int, separate = False, savepath: str = None):
+    def compare_plot_PCs_2D(self, i: int, j: int, separate = False,
+                            savepath: str = None) -> None:
         """
-        Plots the projection of Z and Zbasis onto the plane of two variables.
+        Plots the projection of Z and Zbasis onto the plane of two
+        variables.
 
         Parameters:
+        ----------
             - i (integer): index of first PC to take.
             - j (integer): index of second PC to take.
-            - separate (boolean, optional, default = False): determines if
-              datasets are plotted next to each other or in one plot.
-            - savepath (string, optional, default = None): if it is not None, the plot generated
-              will be saved. The filename is either given in saveplot (when a fileformat is contained
-              in savepath) or an automatic one is created and saved to the path given by savepath
-              (to save it into the same directory, set savepath = '').
+            - separate (boolean, optional, default = False): determines
+              if datasets are plotted next to each other or in one plot.
+            - savepath (string, optional, default = None): if it is not
+              None, the plot generated will be saved. The filename is
+              either given in saveplot (when a fileformat is contained
+              in savepath) or an automatic one is created and saved to
+              the path given by savepath (to save it into the same
+              directory, set savepath = '').
         
         Returns:
+        -------
             - None
         """
 

@@ -25,8 +25,8 @@ from functions import *
 
 
 #%% ---------- Setting plot style (optional) ----------
-plt.style.use("../MATPLOTLIB_RCPARAMS.sty") 
-mpl.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}' 
+plt.style.use("../MATPLOTLIB_RCPARAMS.sty")
+mpl.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
 
 
 

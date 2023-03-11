@@ -20,6 +20,7 @@ def jsd(data1: list, data2: list, binnumber: any = None) -> float:
     Computes the Jensen-Shannon divergence of two samples.
 
     Parameters:
+    ----------
         - data1 (numpy-array): first sample.
         - data2 (numpy-array): second sample.
         - binnumber (any, optional, default = 'default'): can be any
@@ -28,6 +29,7 @@ def jsd(data1: list, data2: list, binnumber: any = None) -> float:
           like int((4 * samplesize) ** (1 / 3)) is used.
     
     Returns:
+    -------
         - div (float): Jensen-Shannon divergence of data1 and data2.
     """
 
@@ -43,11 +45,12 @@ def jsd(data1: list, data2: list, binnumber: any = None) -> float:
     # Determine binnumber for each case, choose minimum
     if binnumber is None:
         binnumber = int(min(
-                        (limits[1] - limits[0]) / (limits1[1] - limits1[0])
-                        * (4 * len1) ** (1 / 3), 
-                        (limits[1] - limits[0]) / (limits2[1] - limits2[0])
-                        * (4 * len2) ** (1 / 3)
-                        ))
+                            (limits[1] - limits[0]) / (limits1[1] - limits1[0])
+                            * (4 * len1) ** (1 / 3), 
+                            (limits[1] - limits[0]) / (limits2[1] - limits2[0])
+                            * (4 * len2) ** (1 / 3)
+                            )
+                        )
         
     # Compute histograms as estimates of probability density function
     # Note: no normalization here (would be "density = True") because
@@ -69,6 +72,7 @@ def kld(data1: list, data2: list, binnumber: any = None) -> float:
     Computes the Kullback-Leibler divergence of two samples.
 
     Parameters:
+    ----------
         - data1 (numpy-array): first sample.
         - data2 (numpy-array): second sample.
         - binnumber (any, optional, default = 'default'): can be any
@@ -77,6 +81,7 @@ def kld(data1: list, data2: list, binnumber: any = None) -> float:
           like int((4 * samplesize) ** (1 / 3)) is used.
     
     Returns:
+    -------
         - div (float): Kullback-Leibler divergence of data1 and data2.
     """
 
@@ -92,11 +97,12 @@ def kld(data1: list, data2: list, binnumber: any = None) -> float:
     # Determine binnumber for each case, choose minimum
     if binnumber is None:
         binnumber = int(min(
-                        (limits[1] - limits[0]) / (limits1[1] - limits1[0])
-                        * (4 * len1) ** (1 / 3), 
-                        (limits[1] - limits[0]) / (limits2[1] - limits2[0])
-                        * (4 * len2) ** (1 / 3)
-                        ))
+                            (limits[1] - limits[0]) / (limits1[1] - limits1[0])
+                            * (4 * len1) ** (1 / 3), 
+                            (limits[1] - limits[0]) / (limits2[1] - limits2[0])
+                            * (4 * len2) ** (1 / 3)
+                            )
+                        )
         
     # Compute histograms as estimates of probability density function
     # Note: no normalization here (would be "density = True") because
@@ -120,10 +126,12 @@ def mean_criterion(data1: any, data2: any) -> np.array:
     deviation of two samples.
 
     Parameters:
+    ----------
         - data1 (array-like): first sample.
         - data2 (array-like): second sample.
     
     Returns:
+    -------
         - critval (numpy-array): value of mean criterion for columns
           of data1 and data2.
     """
@@ -140,27 +148,29 @@ def median_criterion(data1: any, data2: any, cred: float) -> np.array:
     interval of two samples.
 
     Parameters:
+    ----------
         - data1 (array-like): first sample.
         - data2 (array-like): second sample.
         - cred (float): percentage of data left/ right of median used
           for the calculation of the credible interval.
     
     Returns:
+    -------
         - critvals (numpy-array): values of median criterion for
           columns of data1 and data2.
     """
 
     # Calculate left credible boundary, median, right credible boundary
     credleft1, medians1, credright1 = np.percentile(
-        data1,
-        [50 - cred, 50, 50 + cred],
-        axis = 0
-        )
+                                                    data1,
+                                                    [50 - cred, 50, 50 + cred],
+                                                    axis = 0
+                                                    )
     credleft2, medians2, credright2 = np.percentile(
-        data2,
-        [50 - cred, 50, 50 + cred],
-        axis = 0
-        )
+                                                    data2,
+                                                    [50 - cred, 50, 50 + cred],
+                                                    axis = 0
+                                                    )
 
     # Calculate credible interval as distance between left/ right boundary and
     # median (subtracting both is ok due to use of abs in next step)
